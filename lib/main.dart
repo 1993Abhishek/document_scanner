@@ -1,7 +1,9 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
-
+import 'package:image/image.dart';
 import 'package:flutter/services.dart';
 import 'package:edge_detection/edge_detection.dart';
 
@@ -9,14 +11,14 @@ void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatefulWidget{
+class MyApp extends StatefulWidget {
   @override
   _MyAppState createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
   String? _imagePath;
-  String apiLink="https://sbconstruction.org.in/sb/images/";
+  String apiLink = 'https://kosher.des.vidinitechnology.com/api/v1/image';
 
   Dio dio = Dio();
   Response? remoteResponse;
@@ -27,10 +29,12 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future uploadScannedImg(String path) async {
-    String fileName = path.split('/').last;
+    // String fileName = path.split('/').last;
+    // print(fileName);
     FormData formData = FormData.fromMap({
-      "file": await MultipartFile.fromFile(path, filename: fileName),
+      "image": await MultipartFile.fromFile(path, filename: 'ksa.jpg'),
     });
+    print(formData);
     remoteResponse = await dio.post(
       apiLink,
       data: formData,
@@ -41,11 +45,9 @@ class _MyAppState extends State<MyApp> {
   Future<void> getImage() async {
     String? imagePath;
     try {
-      imagePath = (await EdgeDetection.detectEdge);
-
-
+      imagePath = await EdgeDetection.detectEdge;
       print("$imagePath");
-
+      print('Checking path:${imagePath!.split('.').first+'.jpg'}');
     } on PlatformException {
       imagePath = 'Failed to get cropped image path.';
     }
@@ -55,7 +57,22 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _imagePath = imagePath;
     });
+    if(imagePath!.isNotEmpty)
+      {
+        print('Image Path:$imagePath');
+        // uploadScannedImg(imagePath);
+        convertToJpg(path: imagePath,);
 
+      }
+
+  }
+  convertToJpg({String path=''})
+  {
+    final image = decodeImage(File(path).readAsBytesSync())!;
+    // final thumbnail = copyResize(image, width: 70,height: 70);
+    File(path.split('.').first+'.jpg').writeAsBytesSync(encodeJpg(image));
+    print(path.split('.').first+'.jpg');
+    uploadScannedImg(path.split('.').first+'.jpg');
   }
 
   @override
@@ -63,7 +80,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title:  Text("Scanner"),
+          title: Text("Scanner"),
           centerTitle: true,
         ),
         body: Container(
@@ -75,11 +92,18 @@ class _MyAppState extends State<MyApp> {
             children: [
               Center(
                 child: ElevatedButton(
-                  onPressed:(){
+                  onPressed: () {
                     getImage();
-                    uploadScannedImg(_imagePath!);
-                    },
-                  child: Text('Scan'),
+
+                  },
+                  child: Text(
+                    'Scan',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                  ),
                 ),
               ),
               SizedBox(height: 20),
@@ -98,4 +122,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-

@@ -24,6 +24,7 @@ dependencies:
   flutter:
     sdk: flutter
   edge_detection: ^1.0.6
+  image:
 
 
   # The following adds the Cupertino Icons font to your application.
